@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "driftline"
+version = "1.0.0"
+description = "Closed-loop MLOps platform: validated data pipeline, MLflow registry, canary/shadow serving, drift-triggered retraining."
+requires-python = ">=3.11"
+dependencies = [
+    "polars>=1.9",
+    "duckdb>=1.1",
+    "pandera[polars]>=0.20",
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "lightgbm>=4.5",
+    "mlflow>=2.16",
+    "prefect>=3.0",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.30",
+    "grpcio>=1.66",
+    "protobuf>=5.27",
+    "prometheus-client>=0.20",
+    "celery[redis]>=5.4",
+    "redis>=5.0",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.4",
+    "pyarrow>=16",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.6", "grpcio-tools>=1.66"]
+
+[project.scripts]
+driftline = "driftline.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["driftline*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning", "ignore::UserWarning"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+extend-exclude = ["driftline/serving/proto/*_pb2*.py", "driftline/serving/proto/*.pyi"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["B905"]  # zip(strict=) adds noise where lengths are equal by construction
