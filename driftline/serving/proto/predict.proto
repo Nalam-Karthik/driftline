@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package driftline.v1;
+
+// Low-overhead binary interface for internal callers (dispatch, pricing) that score
+// trips in bulk. Shares the predictor, feature store and prediction log with the REST API.
+service TripDuration {
+  rpc Predict (TripRequest) returns (TripPrediction);
+  rpc PredictBatch (TripBatch) returns (TripPredictions);
+}
+
+message TripRequest {
+  int64 pickup_unix_s = 1;      // local NYC wall-clock time as naive epoch seconds
+  int32 pu_location_id = 2;
+  int32 do_location_id = 3;
+  double trip_distance = 4;
+  int32 passenger_count = 5;
+  int32 ratecode_id = 6;
+  string request_id = 7;
+}
+
+message TripPrediction {
+  string request_id = 1;
+  double duration_min = 2;
+  string model_version = 3;
+  string model_role = 4;
+}
+
+message TripBatch { repeated TripRequest trips = 1; }
+message TripPredictions { repeated TripPrediction predictions = 1; }
