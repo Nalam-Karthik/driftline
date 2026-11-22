@@ -1,0 +1,108 @@
+x-app: &app
+  build: .
+  image: driftline:latest
+  environment: &env
+    DRIFTLINE_REDIS_URL: redis://redis:6379/0
+    DRIFTLINE_MLFLOW_TRACKING_URI: http://mlflow:5000
+    DRIFTLINE_WAREHOUSE_PATH: /app/data/warehouse.duckdb
+    DRIFTLINE_ROUTING_MODE: ${ROUTING_MODE:-shadow}
+    DRIFTLINE_CANARY_FRACTION: ${CANARY_FRACTION:-0.1}
+    DRIFTLINE_REGISTRY_POLL_SECONDS: "15"
+  volumes:
+    - ./data:/app/data
+  depends_on:
+    redis: { condition: service_healthy }
+    mlflow: { condition: service_healthy }
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    ports: ["${REDIS_PORT:-6379}:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mlflow
+      POSTGRES_PASSWORD: mlflow
+      POSTGRES_DB: mlflow
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mlflow"]
+      interval: 5s
+
+  # Tracking server + model registry; artifacts are proxied so clients need no shared disk.
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v3.1.1
+    command: >
+      sh -c "pip install --quiet psycopg2-binary &&
+             mlflow server --host 0.0.0.0 --port 5000
+             --backend-store-uri postgresql://mlflow:mlflow@postgres:5432/mlflow
+             --artifacts-destination /mlartifacts --serve-artifacts"
+    ports: ["${MLFLOW_PORT:-5000}:5000"]
+    volumes: [mlartifacts:/mlartifacts]
+    depends_on:
+      postgres: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 10s
+      start_period: 40s
+
+  api:
+    <<: *app
+    # One process per container: prometheus_client counters are per-process, so scale with
+    # replicas (`docker compose up --scale api=N` / the k8s HPA), not uvicorn workers.
+    command: ["driftline", "serve"]
+    environment:
+      <<: *env
+      POLARS_MAX_THREADS: "1"  # single-row work; a full pool per worker oversubscribes CPUs
+    ports: ["${API_PORT:-8000}:8000"]
+
+  grpc:
+    <<: *app
+    command: ["driftline", "grpc"]
+    environment:
+      <<: *env
+      POLARS_MAX_THREADS: "1"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('localhost', 50051), 2)"]
+      interval: 15s
+    ports: ["${GRPC_PORT:-50051}:50051"]
+
+  worker:
+    <<: *app
+    command: ["celery", "-A", "driftline.monitoring.tasks", "worker", "--beat", "--loglevel=info",
+              "--concurrency=1", "--schedule", "/tmp/celerybeat-schedule"]
+    healthcheck:
+      test: ["CMD", "celery", "-A", "driftline.monitoring.tasks", "inspect", "ping", "--timeout", "5"]
+      interval: 30s
+    environment:
+      <<: *env
+      DRIFTLINE_DRIFT_CHECK_SECONDS: "60"
+
+  # One-shot jobs: `docker compose run --rm trainer driftline train --train 2024-01 2024-02 --eval 2024-03`
+  trainer:
+    <<: *app
+    profiles: ["jobs"]
+    command: ["driftline", "--help"]
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes: [./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro]
+    ports: ["${PROMETHEUS_PORT:-9090}:9090"]
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["${GRAFANA_PORT:-3000}:3000"]
+
+volumes:
+  pgdata:
+  mlartifacts:
