@@ -1,0 +1,236 @@
+{
+  "summary": {
+    "months": 9,
+    "mean_mae": {
+      "frozen": 3.6279867005604256,
+      "fresh_features": 3.636990581479309,
+      "driftline": 3.4152652305899447
+    },
+    "retrains": 2,
+    "promotions": 1,
+    "wall_seconds": 457.3555558329972
+  },
+  "months": [
+    {
+      "month": "2024-04",
+      "frozen_mae": 3.05256584700698,
+      "fresh_features_mae": 3.05256584700698,
+      "driftline_mae": 3.05256584700698,
+      "champion_version": 1,
+      "max_psi": 0.0,
+      "top_drift": [
+        [
+          "pu_location_id",
+          0.0
+        ],
+        [
+          "do_location_id",
+          0.0
+        ],
+        [
+          "ratecode_id",
+          0.0
+        ]
+      ],
+      "event": null
+    },
+    {
+      "month": "2024-05",
+      "frozen_mae": 3.57176616132371,
+      "fresh_features_mae": 3.5795548970093547,
+      "driftline_mae": 3.5795548970093547,
+      "champion_version": 1,
+      "max_psi": 0.0715,
+      "top_drift": [
+        [
+          "pu_hour_trips",
+          0.0715
+        ],
+        [
+          "pu_hour_median_mph",
+          0.0566
+        ],
+        [
+          "pair_trips",
+          0.036
+        ]
+      ],
+      "event": null
+    },
+    {
+      "month": "2024-06",
+      "frozen_mae": 3.459734221475891,
+      "fresh_features_mae": 3.4652480424226972,
+      "driftline_mae": 3.241087793687995,
+      "champion_version": 2,
+      "max_psi": 0.0676,
+      "top_drift": [
+        [
+          "pu_hour_median_mph",
+          0.0676
+        ],
+        [
+          "pu_hour_trips",
+          0.059
+        ],
+        [
+          "dow",
+          0.0302
+        ]
+      ],
+      "event": {
+        "reasons": [
+          "MAE 3.58 is +23% vs offline 2.90"
+        ],
+        "trained_version": 2,
+        "promoted": true,
+        "gate": "relative MAE gain +8.56% (need >= 1%)"
+      }
+    },
+    {
+      "month": "2024-07",
+      "frozen_mae": 3.1922108691340125,
+      "fresh_features_mae": 3.1910856692686456,
+      "driftline_mae": 3.1749259221573247,
+      "champion_version": 2,
+      "max_psi": 0.0646,
+      "top_drift": [
+        [
+          "pu_hour_median_mph",
+          0.0646
+        ],
+        [
+          "dow",
+          0.0381
+        ],
+        [
+          "is_weekend",
+          0.0228
+        ]
+      ],
+      "event": null
+    },
+    {
+      "month": "2024-08",
+      "frozen_mae": 3.119455391954126,
+      "fresh_features_mae": 3.1087673036438264,
+      "driftline_mae": 3.0343719812224488,
+      "champion_version": 2,
+      "max_psi": 0.0572,
+      "top_drift": [
+        [
+          "dow",
+          0.0572
+        ],
+        [
+          "pair_trips",
+          0.0146
+        ],
+        [
+          "pair_median_min",
+          0.0137
+        ]
+      ],
+      "event": null
+    },
+    {
+      "month": "2024-09",
+      "frozen_mae": 4.1053945674645576,
+      "fresh_features_mae": 4.0924609122653415,
+      "driftline_mae": 3.732652513868128,
+      "champion_version": 2,
+      "max_psi": 0.0787,
+      "top_drift": [
+        [
+          "pu_hour_trips",
+          0.0787
+        ],
+        [
+          "pair_trips",
+          0.0475
+        ],
+        [
+          "pu_hour_median_mph",
+          0.0417
+        ]
+      ],
+      "event": null
+    },
+    {
+      "month": "2024-10",
+      "frozen_mae": 3.730870272983699,
+      "fresh_features_mae": 3.7485223777055254,
+      "driftline_mae": 3.3682852371473526,
+      "champion_version": 2,
+      "max_psi": 0.1046,
+      "top_drift": [
+        [
+          "pu_hour_trips",
+          0.1046
+        ],
+        [
+          "pair_trips",
+          0.0707
+        ],
+        [
+          "pu_hour_median_mph",
+          0.0633
+        ]
+      ],
+      "event": {
+        "reasons": [
+          "MAE 3.73 is +14% vs offline 3.27"
+        ],
+        "trained_version": 3,
+        "promoted": false,
+        "gate": "relative MAE gain -4.37% (need >= 1%)"
+      }
+    },
+    {
+      "month": "2024-11",
+      "frozen_mae": 3.687370139318911,
+      "fresh_features_mae": 3.7154681888720864,
+      "driftline_mae": 3.371125730869656,
+      "champion_version": 2,
+      "max_psi": 0.1093,
+      "top_drift": [
+        [
+          "pu_hour_median_mph",
+          0.1093
+        ],
+        [
+          "pair_median_min",
+          0.0315
+        ],
+        [
+          "dow",
+          0.0181
+        ]
+      ],
+      "event": null
+    },
+    {
+      "month": "2024-12",
+      "frozen_mae": 4.7325128343819465,
+      "fresh_features_mae": 4.7792419951193255,
+      "driftline_mae": 4.182817152340259,
+      "champion_version": 2,
+      "max_psi": 0.1881,
+      "top_drift": [
+        [
+          "pu_hour_median_mph",
+          0.1881
+        ],
+        [
+          "dow",
+          0.0395
+        ],
+        [
+          "pu_hour_trips",
+          0.0269
+        ]
+      ],
+      "event": null
+    }
+  ]
+}
