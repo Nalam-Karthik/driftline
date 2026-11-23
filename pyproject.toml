@@ -18,7 +18,7 @@ dependencies = [
     "prefect>=3.0",
     "fastapi>=0.110",
     "uvicorn[standard]>=0.30",
-    "grpcio>=1.66",
+    "grpcio>=1.85.1",
     "protobuf>=5.27",
     "prometheus-client>=0.20",
     "celery[redis]>=5.4",
@@ -29,7 +29,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.6", "grpcio-tools>=1.66"]
+dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.6", "grpcio-tools==1.85.1"]
 
 [project.scripts]
 driftline = "driftline.cli:main"
