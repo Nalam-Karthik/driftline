@@ -1,0 +1,46 @@
+# Minimal in-cluster tracking server + registry. In production point
+# DRIFTLINE_MLFLOW_TRACKING_URI at a managed MLflow / Postgres + S3 instead.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector: { matchLabels: { app: mlflow } }
+  template:
+    metadata: { labels: { app: mlflow } }
+    spec:
+      containers:
+        - name: mlflow
+          image: ghcr.io/mlflow/mlflow:v3.1.1
+          command: ["mlflow", "server", "--host", "0.0.0.0", "--port", "5000",
+                    "--backend-store-uri", "sqlite:////mlflow/mlflow.db",
+                    "--artifacts-destination", "/mlflow/artifacts", "--serve-artifacts"]
+          ports: [{ containerPort: 5000 }]
+          readinessProbe:
+            httpGet: { path: /health, port: 5000 }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 200m, memory: 512Mi }
+          volumeMounts: [{ name: store, mountPath: /mlflow }]
+      volumes:
+        - name: store
+          persistentVolumeClaim: { claimName: mlflow-store }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow
+spec:
+  selector: { app: mlflow }
+  ports: [{ port: 5000 }]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mlflow-store
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests: { storage: 10Gi }

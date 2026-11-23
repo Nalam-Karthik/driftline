@@ -1,0 +1,57 @@
+# Celery worker (drift checks + retrains). Beat runs in a separate single-replica
+# Deployment so scaling workers never duplicates the schedule.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: driftline-worker
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: driftline-worker } }
+  template:
+    metadata: { labels: { app: driftline-worker } }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 10001 }
+      containers:
+        - name: worker
+          image: driftline:latest
+          imagePullPolicy: IfNotPresent
+          command: ["celery", "-A", "driftline.monitoring.tasks", "worker", "--loglevel=info", "--concurrency=1"]
+          envFrom: [{ configMapRef: { name: driftline-config } }]
+          resources:
+            requests: { cpu: "1", memory: 4Gi }
+            limits: { memory: 8Gi }
+          volumeMounts: [{ name: data, mountPath: /app/data }]
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: driftline-data }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: driftline-beat
+spec:
+  replicas: 1
+  strategy: { type: Recreate }  # exactly one scheduler, even during rollout
+  selector: { matchLabels: { app: driftline-beat } }
+  template:
+    metadata: { labels: { app: driftline-beat } }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 10001 }
+      containers:
+        - name: beat
+          image: driftline:latest
+          imagePullPolicy: IfNotPresent
+          command: ["celery", "-A", "driftline.monitoring.tasks", "beat", "--loglevel=info",
+                    "--schedule", "/tmp/celerybeat-schedule"]
+          envFrom: [{ configMapRef: { name: driftline-config } }]
+          resources:
+            requests: { cpu: 50m, memory: 256Mi }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: driftline-data
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests: { storage: 20Gi }

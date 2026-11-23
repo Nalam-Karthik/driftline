@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: driftline-api
+  labels: { app: driftline-api }
+spec:
+  replicas: 2
+  strategy:
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }  # never drop below current capacity
+  selector: { matchLabels: { app: driftline-api } }
+  template:
+    metadata:
+      labels: { app: driftline-api }
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: /metrics
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 10001 }
+      containers:
+        - name: rest
+          image: driftline:latest
+          imagePullPolicy: IfNotPresent
+          command: ["driftline", "serve"]
+          envFrom: [{ configMapRef: { name: driftline-config } }]
+          env: [{ name: POLARS_MAX_THREADS, value: "1" }]
+          ports:
+            - { name: http, containerPort: 8000 }
+          resources:
+            requests: { cpu: 500m, memory: 768Mi }
+            limits: { memory: 1536Mi }
+          # Model download from the registry can take a while on cold start.
+          startupProbe:
+            httpGet: { path: /ready, port: http }
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet: { path: /ready, port: http }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+        - name: grpc
+          image: driftline:latest
+          imagePullPolicy: IfNotPresent
+          command: ["driftline", "grpc"]
+          envFrom: [{ configMapRef: { name: driftline-config } }]
+          env: [{ name: POLARS_MAX_THREADS, value: "1" }]
+          ports:
+            - { name: grpc, containerPort: 50051 }
+          resources:
+            requests: { cpu: 250m, memory: 768Mi }
+            limits: { memory: 1536Mi }
+          readinessProbe:
+            tcpSocket: { port: grpc }
+            periodSeconds: 10
+            failureThreshold: 30
+      terminationGracePeriodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: driftline-api
+spec:
+  selector: { app: driftline-api }
+  ports:
+    - { name: http, port: 80, targetPort: http }
+    - { name: grpc, port: 50051, targetPort: grpc }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: driftline-api
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: driftline-api }
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 65 }
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: driftline-api
+spec:
+  minAvailable: 1
+  selector: { matchLabels: { app: driftline-api } }

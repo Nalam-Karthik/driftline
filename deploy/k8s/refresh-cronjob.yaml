@@ -1,0 +1,26 @@
+# Monthly feature refresh: on the 3rd (after the TLC publishes the previous month's file),
+# ingest + validate it and publish its zone stats to the online store.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: driftline-refresh-features
+spec:
+  schedule: "0 6 3 * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          securityContext: { runAsNonRoot: true, runAsUser: 10001 }
+          containers:
+            - name: refresh
+              image: driftline:latest
+              imagePullPolicy: IfNotPresent
+              command: ["sh", "-c", "python scripts/fetch_month.py --previous && driftline refresh-features $(python scripts/fetch_month.py --previous --print-month)"]
+              envFrom: [{ configMapRef: { name: driftline-config } }]
+              volumeMounts: [{ name: data, mountPath: /app/data }]
+          volumes:
+            - name: data
+              persistentVolumeClaim: { claimName: driftline-data }

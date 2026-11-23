@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: driftline-config
+data:
+  DRIFTLINE_REDIS_URL: redis://redis:6379/0
+  DRIFTLINE_MLFLOW_TRACKING_URI: http://mlflow:5000
+  DRIFTLINE_WAREHOUSE_PATH: /app/data/warehouse.duckdb
+  DRIFTLINE_ROUTING_MODE: canary
+  DRIFTLINE_CANARY_FRACTION: "0.1"
+  DRIFTLINE_REGISTRY_POLL_SECONDS: "30"
+  MLFLOW_DISABLE_AGENT_HINT: "1"
