@@ -124,6 +124,7 @@ make test                    # 25 tests, synthetic data, ~1 min
 Full stack (Redis, Postgres + MLflow server, API, gRPC, Celery worker + beat, Prometheus, Grafana):
 
 ```bash
+cp .env.example .env         # then set POSTGRES_PASSWORD
 docker compose up -d --build
 docker compose --profile jobs run --rm trainer driftline train --train 2024-01 2024-02 --eval 2024-03
 # Grafana http://localhost:3000 (dashboard "driftline — serving & drift"), MLflow http://localhost:5000

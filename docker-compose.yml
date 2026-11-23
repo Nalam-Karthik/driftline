@@ -26,7 +26,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: mlflow
-      POSTGRES_PASSWORD: mlflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: mlflow
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
@@ -39,7 +39,7 @@ services:
     command: >
       sh -c "pip install --quiet psycopg2-binary &&
              mlflow server --host 0.0.0.0 --port 5000
-             --backend-store-uri postgresql://mlflow:mlflow@postgres:5432/mlflow
+             --backend-store-uri postgresql://mlflow:${POSTGRES_PASSWORD}@postgres:5432/mlflow
              --artifacts-destination /mlartifacts --serve-artifacts"
     ports: ["${MLFLOW_PORT:-5000}:5000"]
     volumes: [mlartifacts:/mlartifacts]
